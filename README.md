@@ -24,7 +24,7 @@ This app therefore measures `dBFS` instead of `dBSPL`, using routed system audio
 - RMS and peak metering in dBFS
 - Peak-hold decay plus attack/release smoothing
 - SwiftUI interface with start, stop, and reset controls
-- No third-party dependencies
+- Uses the separately installed BlackHole loopback device
 
 ## Technical Highlights
 
@@ -32,6 +32,16 @@ This app therefore measures `dBFS` instead of `dBSPL`, using routed system audio
 - `Accelerate/vDSP` for efficient peak and RMS calculations
 - Main-thread UI throttling to keep rendering stable
 - Sandboxed macOS app with audio capture permission
+
+## How It Works
+
+The app finds the `BlackHole 2ch` device and configures an AUHAL input
+unit for non-interleaved stereo Float32 PCM at the device's nominal sample
+rate. Its audio callback renders samples into reusable channel buffers, then
+uses vDSP to calculate RMS and peak magnitude. The meter converts those values
+to dBFS, applies peak hold and attack/release smoothing, and sends UI updates
+to the main thread at up to 30 Hz. Buffers can be allocated or resized in the
+callback when the frame capacity is insufficient.
 
 ## Stack
 
@@ -49,7 +59,7 @@ This app therefore measures `dBFS` instead of `dBSPL`, using routed system audio
 ## Running Locally
 
 1. Install and configure a loopback device such as `BlackHole 2ch`.
-2. Route system audio through that device.
+2. Route system audio through that device (or a multi-output device that includes it).
 3. Open `audiodb.xcodeproj` in Xcode.
 4. Build and run the `audiodb` scheme.
 5. Grant audio capture permission if prompted, then click `Start`.
